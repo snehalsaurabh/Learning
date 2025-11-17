@@ -92,56 +92,165 @@ docker compose down -v
 
 ---
 
-## Configuration Files
+## Configuration Files for Self Hosting
 
 We have 5 config files. Here's what each does:
 
-### 1. `prometheus-config.yml`
-
-Tells Prometheus where to get metrics from:
-
-```yaml
-global:
-  scrape_interval: 5s
-
-scrape_configs:
-  - job_name: 'prometheus-backend-monitoring'
-    static_configs:
-      - targets: ['backend:3000']
+All config files already live in the repo so the only command we need is:
+```bash
+docker compose up -d
 ```
 
-**Important**: If we run the app outside Docker, change `backend:3000` to `localhost:3000` or the actual IP address.
+### What each config file does
 
-### 2. `loki-config.yml`
+1. `prometheus-config.yml`
+   ```yaml
+   global:
+     scrape_interval: 5s
 
-Basic Loki setup:
-- Stores data in a Docker volume
-- Keeps logs for 7 days (168 hours)
-- Single-node setup (simple for learning)
+   scrape_configs:
+     - job_name: 'prometheus-backend-monitoring'
+       static_configs:
+         - targets: ['10.158.13.213:3000']
+   ```
+   Update the target to match wherever the Express container exposes port `3000` (`backend:3000` inside Docker, `localhost:3000` from our host).
 
-### 3. `promtail-config.yml`
+2. `loki-config.yml`
+   ```yaml
+   auth_enabled: false
+   server:
+     http_listen_port: 3100
+   common:
+     path: /loki
+     replication_factor: 1
+   schema_config:
+     configs:
+       - from: 2020-10-15
+         store: boltdb-shipper
+         object_store: filesystem
+         schema: v11
+   storage_config:
+     boltdb_shipper:
+       active_index_directory: /loki/index
+       cache_location: /loki/cache
+     filesystem:
+       directory: /loki/chunks
+   limits_config:
+     retention_period: 168h
+   ```
+   This is the lightweight single-node Loki preset that persists data under the `loki-data` volume.
 
-Tells Promtail to:
-- Watch Docker containers
-- Only send logs from containers labeled `promtail=true`
-- Send those logs to Loki
+3. `promtail-config.yml`
+   ```yaml
+   server:
+     http_listen_port: 9080
+   positions:
+     filename: /tmp/positions.yaml
+   clients:
+     - url: http://loki:3100/loki/api/v1/push
+   scrape_configs:
+     - job_name: container-logs
+       docker_sd_configs:
+         - host: unix:///var/run/docker.sock
+       relabel_configs:
+         - source_labels: ['__meta_docker_container_label_promtail']
+           regex: true
+           action: keep
+         - source_labels: ['__meta_docker_container_label_app']
+           target_label: app
+         - source_labels: ['__meta_docker_container_name']
+           target_label: container
+   ```
+   Promtail only forwards containers that expose the label `promtail=true`, which we add to the backend service so only our app logs reach Loki.
 
-Our backend service has the `promtail: "true"` label, so only our app logs go to Loki.
+4. `grafana-datasource.yml`
+   ```yaml
+   apiVersion: 1
+   datasources:
+     - name: Prometheus
+       type: prometheus
+       url: http://prom-server:9090
+       isDefault: true
+     - name: Loki
+       type: loki
+       url: http://loki:3100
+   ```
+   Grafana boots with both data sources pre-wired, so we can create dashboards immediately without manual setup.
 
-### 4. `grafana-datasource.yml`
+5. `docker-compose.yml`
+   ```yaml
+   version: "3.8"
 
-Automatically connects Grafana to Prometheus and Loki when it starts. No manual setup needed.
+   services:
+     backend:
+       image: node:18-alpine
+       working_dir: /app
+       command: sh -c "npm install && node index.js"
+       volumes:
+         - ./:/app
+       environment:
+         - LOKI_HOST=http://loki:3100
+       ports:
+         - "3000:3000"
+       labels:
+         promtail: "true"
+         app: loki-backend-monitoring
+       depends_on:
+         - loki
 
-### 5. `docker-compose.yml`
+     prom-server:
+       image: prom/prometheus
+       ports:
+         - "9090:9090"
+       volumes:
+         - ./prometheus-config.yml:/etc/prometheus/prometheus.yml:ro
 
-Runs all our services together:
-- **backend** - Our Express app (`index.js`)
-- **prom-server** - Prometheus server
-- **loki** - Loki log storage  
-- **grafana** - Grafana dashboard
-- **promtail** - Log shipper
+     loki:
+       image: grafana/loki:2.9.0
+       ports:
+         - "3100:3100"
+       volumes:
+         - ./loki-config.yml:/etc/loki/config.yml:ro
+         - loki-data:/loki
 
-**Note**: Grafana runs on port 4000 (instead of 3000) so it doesn't conflict with our app.
+     grafana:
+       image: grafana/grafana-oss
+       ports:
+         - "4000:3000"
+       volumes:
+         - grafana-data:/var/lib/grafana
+         - ./grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+       depends_on:
+         - prom-server
+         - loki
+
+     promtail:
+       image: grafana/promtail:2.9.0
+       volumes:
+         - ./promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+         - /var/run/docker.sock:/var/run/docker.sock
+       depends_on:
+         - loki
+
+   volumes:
+     loki-data:
+     grafana-data:
+   ```
+   - The backend is the Express code from this repo. It sets `LOKI_HOST=http://loki:3100` so Winston ships structured logs directly to Loki, while Promtail captures container stdout/stderr for anything else.
+   - Grafana exposes `http://localhost:4000` so it never clashes with the Express app on `http://localhost:3000`.
+
+### Managing the stack
+
+- Start everything: `docker compose up -d`
+- Stop and clean up containers (volumes persist): `docker compose down`
+- Stop and remove volumes too: `docker compose down -v`
+
+Available URLs once the stack is running:
+
+- App: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:4000` (login `admin/admin` on first run)
+- Loki: query via Grafana → Explore (no standalone UI)
 
 ---
 
