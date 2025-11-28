@@ -20,24 +20,24 @@ export const groceryCategories = [
 
 export const groceries: GroceryItem[] = [
   {
-    id: 'avocado-hass',
-    name: 'Hass Avocado',
-    description: 'Creamy & ripe, perfect for toast or salads',
+    id: 'Mango',
+    name: 'Alphonso Mango',
+    description: 'Creamy & ripe, perfect for smoothies',
     price: 2.49,
     unit: 'each',
     category: 'Fruits',
     tags: ['Popular', 'Vegan'],
-    image: 'assets/images/groceries/avocado.png',
+    image: 'assets/images/groceries/mango.png',
   },
   {
-    id: 'kale-bunch',
-    name: 'Organic Kale',
-    description: 'Crisp leaves great for smoothies & sautés',
+    id: 'Cabbage',
+    name: 'Organic Cabbage',
+    description: 'Crisp leaves great for smoothies and sandwiches',
     price: 3.99,
     unit: 'bunch',
     category: 'Vegetables',
     tags: ['Popular', 'New'],
-    image: 'assets/images/groceries/kale.png',
+    image: 'assets/images/groceries/cabbage.png',
   },
   {
     id: 'berries-mix',
@@ -70,8 +70,8 @@ export const groceries: GroceryItem[] = [
     image: 'assets/images/groceries/sourdough.png',
   },
   {
-    id: 'granola-honey',
-    name: 'Honey Granola',
+    id: 'Pantanjali Oats',
+    name: 'Patanjali Oats',
     description: 'Crunchy oat clusters with almonds',
     price: 7.5,
     unit: '14 oz',

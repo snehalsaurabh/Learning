@@ -3,5 +3,6 @@ export type RootStackParamList = {
   Auth: undefined;
   Home: undefined;
   Cart: undefined;
+  Checkout: undefined;
 };
 

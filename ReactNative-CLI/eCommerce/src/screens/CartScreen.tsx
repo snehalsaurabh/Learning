@@ -17,7 +17,7 @@ import { spacing } from '../theme/spacing';
 type Props = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
 export function CartScreen({ navigation }: Props) {
-  const { items, increment, decrement, remove, subtotal, clear } = useCart();
+  const { items, increment, decrement, remove, subtotal } = useCart();
   const deliveryFee = items.length ? 4.5 : 0;
   const total = subtotal + deliveryFee;
 
@@ -83,7 +83,10 @@ export function CartScreen({ navigation }: Props) {
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
             </View>
-            <PrimaryButton label="Checkout" onPress={clear} />
+            <PrimaryButton
+              label="Checkout"
+              onPress={() => navigation.navigate('Checkout')}
+            />
           </View>
         ) : null}
       </View>

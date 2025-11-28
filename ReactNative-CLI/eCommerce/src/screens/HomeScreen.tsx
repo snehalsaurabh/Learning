@@ -41,7 +41,7 @@ export function HomeScreen({ navigation }: Props) {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.eyebrow}>Deliver to</Text>
-          <Text style={styles.location}>221B Baker Street</Text>
+          <Text style={styles.location}>Sada Colony, Madhya Pradesh, India</Text>
         </View>
         <SearchBar value={query} onChangeText={setQuery} />
         <ScrollView

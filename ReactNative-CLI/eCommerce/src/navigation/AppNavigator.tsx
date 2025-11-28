@@ -5,6 +5,7 @@ import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { CartScreen } from '../screens/CartScreen';
+import { CheckoutScreen } from '../screens/CheckoutScreen';
 import { RootStackParamList } from './types';
 import { colors } from '../theme/colors';
 import { enableScreens } from 'react-native-screens';
@@ -37,6 +38,7 @@ export function AppNavigator() {
         <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
