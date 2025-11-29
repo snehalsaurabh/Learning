@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GroceryItem } from '../data/groceries';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { getImageSource } from '../utils/imageAssets';
 
 type GroceryCardProps = {
   item: GroceryItem;
@@ -10,11 +11,19 @@ type GroceryCardProps = {
 };
 
 export function GroceryCard({ item, onAddToCart }: GroceryCardProps) {
+  const imageSource = getImageSource(item.image);
+  
   return (
     <View style={styles.card}>
       <View style={styles.hero}>
-        <Text style={styles.heroInitials}>{item.name.charAt(0)}</Text>
-        <Text style={styles.heroHint}>Add {item.image}</Text>
+        {imageSource ? (
+          <Image source={imageSource} style={styles.heroImage} resizeMode="cover" />
+        ) : (
+          <>
+            <Text style={styles.heroInitials}>{item.name.charAt(0)}</Text>
+            <Text style={styles.heroHint}>Image not found</Text>
+          </>
+        )}
       </View>
       <View style={styles.headerRow}>
         <Text style={styles.category}>{item.category}</Text>
@@ -63,6 +72,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
   heroInitials: {
     fontSize: 40,
